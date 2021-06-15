@@ -36,6 +36,8 @@ char [] toCommaNumber (long value)
 	return res[pos..$];
 }
 
+immutable int hamsterMetalGain = 100;
+
 struct PlayerInfo
 {
 	string name;
@@ -48,20 +50,22 @@ int main (string [] args)
 	auto nowTime = Clock.currTime (UTC ());
 
 	string [] unitTypes;
+	int [string] healthByType;
 	int [string] pointsByType;
 
-	auto addUnitType (string name, int points)
+	auto addUnitType (string name, int health, int points)
 	{
 		unitTypes ~= name;
+		healthByType[name] = health;
 		pointsByType[name] = points;
 	}
 
-	addUnitType ("Wolf",        1);
-	addUnitType ("Ant",         2);
-	addUnitType ("Skunk",       4);
-	addUnitType ("Raccoon",     8);
-	addUnitType ("Elephantor", 16);
-	addUnitType ("Hamster",    16);
+	addUnitType ("Wolf",       250, 1);
+	addUnitType ("Ant",        400, 2);
+	addUnitType ("Skunk",      400, 4);
+	addUnitType ("Raccoon",    600, 8);
+	addUnitType ("Elephantor", 900, 16);
+	addUnitType ("Hamster",    800, 16);
 
 	PlayerInfo [string] playersTable;
 	PlayerInfo totals;
@@ -69,6 +73,9 @@ int main (string [] args)
 
 	auto unitsTable = File ("units.binary", "rb")
 	    .byLineCopy.join ('\n').parseJSON;
+
+	long allHamstersGain = 0;
+	long allUnitsHealth = 0;
 
 	foreach (line; unitsTable["rows"].array)
 	{
@@ -88,6 +95,12 @@ int main (string [] args)
 
 		playersTable[playerName].points += pointsByType[unitType];
 		totals.points += pointsByType[unitType];
+
+		if (unitType == "Hamster")
+		{
+			allHamstersGain += hamsterMetalGain;
+		}
+		allUnitsHealth += healthByType[unitType];
 	}
 
 	auto players = playersTable.byValue.array;
@@ -147,14 +160,16 @@ int main (string [] args)
 			    `id="col-%s">%s</th>`) (line.toLower, line);
 		}
 		file.writefln !(`<th class="header" ` ~
-		    `id="col-points">Points</th>`);
+		    `id="col-points" ` ~
+		    `title="Wolf=1&#10;Ant=2&#10;Skunk=4&#10;Raccoon=8&#10;` ~
+		    `Elephantor=16&#10;Hamster=16">Points</th>`);
 		file.writefln !(`<th id="col-percent">Share</th>`);
 
 		auto writePlayer (long i, ref PlayerInfo player)
 		{
 			file.writefln !(`<tr>`);
 			file.writefln !(`<td class="amount">%s</td>`)
-			    ((i >= 0) ? text (i + 1) : "&nbsp;");
+			    ((i >= 0) ? (i + 1) : players.length);
 			file.writefln !(`<td class="name">%s</td>`)
 			    (player.name);
 			foreach (line; unitTypes)
@@ -172,7 +187,25 @@ int main (string [] args)
 			file.writefln !(`</tr>`);
 		}
 
+		auto writeStats ()
+		{
+			file.writefln !(`<tr>`);
+			file.writefln !(`<td class="amount">&nbsp;</td>`);
+			file.writefln !(`<td class="name">Owners:</td>`);
+			foreach (line; unitTypes)
+			{
+				file.writefln !(`<td class="amount">` ~
+				    `%.02f%%</td>`) (players.map !(player =>
+				    player.amount.get (line, 0) > 0).sum (0) *
+				    100.0 / players.length);
+			}
+			file.writefln !(`<td class="amount">&nbsp;</td>`);
+			file.writefln !(`<td class="amount">&nbsp;</td>`);
+			file.writefln !(`</tr>`);
+		}
+
 		writePlayer (-1, totals);
+		writeStats ();
 		file.writefln !(`<tr height=5px></tr>`);
 		file.writeln (`</thead>`);
 		file.writeln (`<tbody>`);
@@ -184,9 +217,35 @@ int main (string [] args)
 		file.writeln (`<tfoot>`);
 		file.writefln !(`<tr height=5px></tr>`);
 		writePlayer (-1, totals);
+		writeStats ();
 		file.writeln (`</tfoot>`);
 
 		file.writeln (`</table>`);
+		file.writeln (`<p height="5px"></p>`);
+
+		auto allHourlyRepair = allUnitsHealth / 10 / 2;
+		auto diff = allHamstersGain - allHourlyRepair;
+		file.writeln (`<table class="log" ` ~
+		    `id="general-table">`);
+		file.writeln (`<tr>`);
+		file.writeln (`<td class="header">How much metal ` ~
+		    `can be mined by all hamsters in an hour:</td>`);
+		file.writefln !(`<td class="amount">%s</td>`)
+		    (toCommaNumber (allHamstersGain));
+		file.writeln (`</tr>`);
+		file.writeln (`<tr>`);
+		file.writeln (`<td class="header">How much metal ` ~
+		    `can be spent on repairs in an hour:</td>`);
+		file.writefln !(`<td class="amount">%s</td>`)
+		    (toCommaNumber (allHourlyRepair));
+		file.writeln (`</tr>`);
+		file.writeln (`<tr>`);
+		file.writeln (`<td class="header">Difference:</td>`);
+		file.writefln !(`<td class="amount">%s%s</td>`)
+		    (diff >= 0 ? "" : "-", toCommaNumber (abs (diff)));
+		file.writeln (`</tr>`);
+		file.writeln (`</table>`);
+
 		file.writefln (`<script type="text/javascript" ` ~
 		    `src="sort-players.js"></script>`);
 		writeFooter (file);
