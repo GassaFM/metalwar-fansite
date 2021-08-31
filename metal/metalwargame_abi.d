@@ -1,6 +1,20 @@
 module metalwargame_abi;
 import transaction;
 
+struct claim
+{
+	uint64 asset_id;
+	Name asset_owner;
+}
+
+struct collectibles_table
+{
+	uint64 asset_id;
+	Name owner;
+	int32 template_id;
+	uint64 last_claim;
+}
+
 struct commander
 {
 	Name key;
@@ -14,6 +28,11 @@ struct destroy
 {
 	uint64 asset_id;
 	Name asset_owner;
+}
+
+struct dropstuff
+{
+	uint64 asset_id;
 }
 
 struct gameunit
@@ -49,6 +68,16 @@ struct locations
 	uint8 type_id;
 }
 
+struct locationsadd
+{
+	uint64 location;
+	uint8 type_id;
+	uint16 xstart;
+	uint16 ystart;
+	uint16 xcount;
+	uint16 ycount;
+}
+
 struct monsters
 {
 	uint64 location;
@@ -58,6 +87,14 @@ struct monsters
 }
 
 struct oredeposits
+{
+	uint64 location;
+	uint8 type_id;
+	uint64 amount;
+	uint8 lvl;
+}
+
+struct orelocadd
 {
 	uint64 location;
 	uint8 type_id;
@@ -101,6 +138,22 @@ struct shards
 	uint16 amount;
 }
 
+struct statunits_table
+{
+	uint64 asset_id;
+	Name owner;
+	uint8 buff_type;
+	uint64 raid_counter;
+	uint64 tiredles;
+	uint64 win_counter;
+}
+
+struct stuff
+{
+	uint64 location;
+	stuffItem[] stuff;
+}
+
 struct stuffItem
 {
 	string type;
@@ -115,10 +168,46 @@ struct teleports
 	uint8 price;
 }
 
+struct teleportsadd
+{
+	uint64 location;
+	uint8 type_id;
+	uint8 price;
+}
+
 struct testloc
 {
 	uint64 location;
 	uint8 type_id;
+}
+
+struct tiredles1
+{
+	uint64 asset_id;
+	uint64 cnt;
+}
+
+struct unitattack
+{
+	uint64 asset_id;
+	Name asset_owner;
+	uint64 target_id;
+}
+
+struct unitmine
+{
+	uint64 asset_id;
+	Name asset_owner;
+	uint16 x;
+	uint16 y;
+}
+
+struct unitmove
+{
+	uint64 asset_id;
+	Name asset_owner;
+	uint16 x;
+	uint16 y;
 }
 
 struct unstake
@@ -127,12 +216,15 @@ struct unstake
 	uint64[] asset_ids;
 }
 
+alias collectiblesElement = collectibles_table;
 alias commanderElement = commander;
 alias locationsElement = locations;
 alias monstersElement = monsters;
 alias oredepositsElement = oredeposits;
 alias rngunitsElement = rngunits_table;
 alias shardsElement = shards;
+alias statunitsElement = statunits_table;
+alias stuffElement = stuff;
 alias teleportsElement = teleports;
 alias testlocElement = testloc;
 alias unitsElement = gameunit;

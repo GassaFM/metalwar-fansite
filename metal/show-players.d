@@ -246,7 +246,7 @@ int main (string [] args)
 		file.writeln (`</tr>`);
 		file.writeln (`</table>`);
 
-		file.writefln (`<script type="text/javascript" ` ~
+		file.writefln !(`<script type="text/javascript" ` ~
 		    `src="sort-players.js"></script>`);
 		writeFooter (file);
 	}
